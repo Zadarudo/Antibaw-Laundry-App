@@ -1,0 +1,10 @@
+linter:
+  rules:
+    - camel_case_types
+    - camel_case_extensions
+    - library_names
+    - library_prefixes
+    - non_constant_identifier_names
+    - prefer_const_constructors
+    - prefer_final_fields
+    - type_init_formals
