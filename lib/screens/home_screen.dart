@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/service_card.dart';
 import '../widgets/report_card.dart';
 import '../services/supabase_service.dart';
+import 'layanan_screen.dart';
 import 'service_detail_screen.dart';
 import 'report_detail_screen.dart';
 
@@ -27,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final user = SupabaseService().getCurrentUser();
       if (user != null) {
         final profile = await SupabaseService().getUserProfile(user.id);
-        if (profile != null) {
+        if (profile != null && mounted) {
           setState(() {
             _userName = profile['name'] ?? 'User';
             _businessName = profile['business_name'] ?? '';
@@ -126,14 +127,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             'Kelola cabang usaha Anda',
                           ),
                         ),
+                        // ← Layanan now has its own dedicated screen
                         ServiceCard(
                           icon: Icons.shopping_basket,
                           label: 'Layanan',
                           color: const Color(0xFF9C27B0),
-                          onTap: () => _navigateToService(
+                          onTap: () => Navigator.push(
                             context,
-                            'Layanan',
-                            'Kelola layanan yang tersedia',
+                            MaterialPageRoute(
+                              builder: (_) => const LayananScreen(),
+                            ),
                           ),
                         ),
                         ServiceCard(
@@ -259,7 +262,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _navigateToService(BuildContext context, String title, String description) {
+  void _navigateToService(
+      BuildContext context, String title, String description) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -271,7 +275,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _navigateToReport(BuildContext context, String title, String description) {
+  void _navigateToReport(
+      BuildContext context, String title, String description) {
     Navigator.push(
       context,
       MaterialPageRoute(

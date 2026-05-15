@@ -77,7 +77,7 @@ class SupabaseService {
     required String businessName,
   }) async {
     try {
-      await _supabase.from('profiles').insert({  // ← was 'users'
+      await _supabase.from('profiles').insert({
         'id': userId,
         'email': email,
         'business_name': businessName,
@@ -92,13 +92,13 @@ class SupabaseService {
   Future<Map<String, dynamic>?> getUserProfile(String userId) async {
     try {
       final response = await _supabase
-          .from('profiles')           // ← was 'users'
+          .from('profiles')
           .select()
           .eq('id', userId)
           .single();
       return response;
     } catch (e) {
-      return null;                    // ← return null instead of rethrowing
+      return null;
     }
   }
 
@@ -107,7 +107,7 @@ class SupabaseService {
     required Map<String, dynamic> data,
   }) async {
     try {
-      await _supabase.from('profiles').update(data).eq('id', userId);  // ← was 'users'
+      await _supabase.from('profiles').update(data).eq('id', userId);
     } catch (e) {
       rethrow;
     }
@@ -150,7 +150,10 @@ class SupabaseService {
 
   Future<void> deleteTransaction(String transactionId) async {
     try {
-      await _supabase.from('transactions').delete().eq('id', transactionId);
+      await _supabase
+          .from('transactions')
+          .delete()
+          .eq('id', transactionId);
     } catch (e) {
       rethrow;
     }
@@ -223,7 +226,10 @@ class SupabaseService {
 
   Future<void> deleteNotification(String notificationId) async {
     try {
-      await _supabase.from('notifications').delete().eq('id', notificationId);
+      await _supabase
+          .from('notifications')
+          .delete()
+          .eq('id', notificationId);
     } catch (e) {
       rethrow;
     }
@@ -276,5 +282,107 @@ class SupabaseService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  // ============== Service Categories (Layanan) ==============
+
+  /// Returns all categories for the current user, with a product_count field.
+  Future<List<Map<String, dynamic>>> getServiceCategories() async {
+    try {
+      final userId = getCurrentUser()?.id;
+      if (userId == null) return [];
+
+      // Fetch categories
+      final categories = await _supabase
+          .from('service_categories')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at');
+
+      // For each category, count products
+      final result = <Map<String, dynamic>>[];
+      for (final cat in categories) {
+        final countResponse = await _supabase
+            .from('service_products')
+            .select()
+            .eq('category_id', cat['id'].toString());
+        result.add({
+          ...cat,
+          'product_count': countResponse.length,
+        });
+      }
+      return result;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<void> addServiceCategory({required String name}) async {
+    final userId = getCurrentUser()?.id;
+    if (userId == null) throw Exception('Not logged in');
+
+    await _supabase.from('service_categories').insert({
+      'user_id': userId,
+      'name': name,
+      'created_at': DateTime.now().toIso8601String(),
+    });
+  }
+
+  Future<void> deleteServiceCategory(String categoryId) async {
+    // Cascades to service_products via FK
+    await _supabase
+        .from('service_categories')
+        .delete()
+        .eq('id', categoryId);
+  }
+
+  // ============== Service Products ==============
+
+  /// Returns all products for a given category.
+  /// These are also exposed to the cashier app via the shared `products` table
+  /// alias — or you can query `service_products` directly in the cashier app.
+  Future<List<Map<String, dynamic>>> getServiceProducts({
+    required String categoryId,
+  }) async {
+    try {
+      final data = await _supabase
+          .from('service_products')
+          .select()
+          .eq('category_id', categoryId)
+          .order('created_at');
+      return List<Map<String, dynamic>>.from(data);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<void> addServiceProduct({
+    required String categoryId,
+    required String name,
+    required double price,
+    String? unit,
+    String? imageUrl,
+    bool useItemCount = true,
+  }) async {
+    final userId = getCurrentUser()?.id;
+    if (userId == null) throw Exception('Not logged in');
+
+    await _supabase.from('service_products').insert({
+      'category_id': categoryId,
+      'user_id': userId,
+      'name': name,
+      'price': price,
+      'unit': unit,
+      'image_url': imageUrl,
+      'use_item_count': useItemCount,
+      'created_at': DateTime.now().toIso8601String(),
+    });
+  }
+
+  Future<void> deleteServiceProduct(String productId) async {
+    await _supabase
+        .from('service_products')
+        .delete()
+        .eq('id', productId);
   }
 }
