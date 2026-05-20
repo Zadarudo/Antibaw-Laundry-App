@@ -277,4 +277,166 @@ class SupabaseService {
       rethrow;
     }
   }
+
+  // ============== Cabang Methods ==============
+
+  Future<List<Map<String, dynamic>>> getCabang() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return [];
+    return await _supabase
+        .from('cabang')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+  }
+
+  Future<void> addCabang({
+    required String nama,
+    String? alamat,
+    String? telepon,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('Tidak terautentikasi');
+    await _supabase.from('cabang').insert({
+      'user_id': userId,
+      'nama': nama,
+      'alamat': alamat,
+      'telepon': telepon,
+      'is_active': true,
+    });
+  }
+
+  Future<void> updateCabang({
+    required String id,
+    required Map<String, dynamic> data,
+  }) async {
+    await _supabase.from('cabang').update(data).eq('id', id);
+  }
+
+  Future<void> deleteCabang(String id) async {
+    await _supabase.from('cabang').delete().eq('id', id);
+  }
+
+  // ============== Pegawai Methods ==============
+
+  Future<List<Map<String, dynamic>>> getPegawai() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return [];
+    return await _supabase
+        .from('pegawai')
+        .select('*, cabang(nama)')
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+  }
+
+  Future<void> addPegawai({
+    required String nama,
+    String? jabatan,
+    String? telepon,
+    String? cabangId,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('Tidak terautentikasi');
+    await _supabase.from('pegawai').insert({
+      'user_id': userId,
+      'nama': nama,
+      'jabatan': jabatan,
+      'telepon': telepon,
+      'cabang_id': cabangId,
+      'is_active': true,
+    });
+  }
+
+  Future<void> updatePegawai({
+    required String id,
+    required Map<String, dynamic> data,
+  }) async {
+    await _supabase.from('pegawai').update(data).eq('id', id);
+  }
+
+  Future<void> deletePegawai(String id) async {
+    await _supabase.from('pegawai').delete().eq('id', id);
+  }
+
+  // ============== Pelanggan Methods ==============
+
+  Future<List<Map<String, dynamic>>> getPelanggan() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return [];
+    return await _supabase
+        .from('pelanggan')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+  }
+
+  Future<void> addPelanggan({
+    required String nama,
+    String? telepon,
+    String? alamat,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('Tidak terautentikasi');
+    await _supabase.from('pelanggan').insert({
+      'user_id': userId,
+      'nama': nama,
+      'telepon': telepon,
+      'alamat': alamat,
+      'total_transaksi': 0,
+    });
+  }
+
+  Future<void> updatePelanggan({
+    required String id,
+    required Map<String, dynamic> data,
+  }) async {
+    await _supabase.from('pelanggan').update(data).eq('id', id);
+  }
+
+  Future<void> deletePelanggan(String id) async {
+    await _supabase.from('pelanggan').delete().eq('id', id);
+  }
+
+  // ============== Promo Methods ==============
+
+  Future<List<Map<String, dynamic>>> getPromo() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return [];
+    return await _supabase
+        .from('promo')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+  }
+
+  Future<void> addPromo({
+    required String nama,
+    String? deskripsi,
+    int diskon = 0,
+    DateTime? tanggalMulai,
+    DateTime? tanggalSelesai,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('Tidak terautentikasi');
+    await _supabase.from('promo').insert({
+      'user_id': userId,
+      'nama': nama,
+      'deskripsi': deskripsi,
+      'diskon': diskon,
+      'tanggal_mulai': tanggalMulai?.toIso8601String().split('T').first,
+      'tanggal_selesai': tanggalSelesai?.toIso8601String().split('T').first,
+      'is_active': true,
+    });
+  }
+
+  Future<void> updatePromo({
+    required String id,
+    required Map<String, dynamic> data,
+  }) async {
+    await _supabase.from('promo').update(data).eq('id', id);
+  }
+
+  Future<void> deletePromo(String id) async {
+    await _supabase.from('promo').delete().eq('id', id);
+  }
 }

@@ -4,6 +4,10 @@ import '../widgets/report_card.dart';
 import '../services/supabase_service.dart';
 import 'service_detail_screen.dart';
 import 'report_detail_screen.dart';
+import 'cabang_screen.dart';
+import 'pegawai_screen.dart';
+import 'pelanggan_screen.dart';
+import 'promo_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,8 +43,25 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  int _crossAxisCount(double screenWidth) {
+    if (screenWidth < 340) return 3;
+    if (screenWidth >= 600) return 5;
+    return 4;
+  }
+
+  double _childAspectRatio(int columns) {
+    if (columns == 3) return 0.85;
+    if (columns == 5) return 0.7;
+    return 0.78;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cols = _crossAxisCount(screenWidth);
+    final aspectRatio = _childAspectRatio(cols);
+    final hPadding = screenWidth < 360 ? 12.0 : 20.0;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -50,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
               // Header
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(hPadding),
                 decoration: const BoxDecoration(
                   color: Color(0xFF8B2E6E),
                   borderRadius: BorderRadius.only(
@@ -63,8 +84,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       'Hi ${_userName.isEmpty ? 'User' : _userName}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 24,
+                        fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -72,8 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 4),
                     Text(
                       _businessName.isEmpty ? 'Loading...' : _businessName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 28,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -81,11 +106,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 24),
 
               // Services Section
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: hPadding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -97,14 +122,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     GridView.count(
-                      crossAxisCount: 4,
+                      crossAxisCount: cols,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 20,
-                      crossAxisSpacing: 15,
-                      childAspectRatio: 0.75,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: aspectRatio,
                       children: [
                         ServiceCard(
                           icon: Icons.info,
@@ -120,10 +145,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.apartment,
                           label: 'Cabang',
                           color: const Color(0xFF29B6F6),
-                          onTap: () => _navigateToService(
+                          onTap: () => Navigator.push(
                             context,
-                            'Cabang',
-                            'Kelola cabang usaha Anda',
+                            MaterialPageRoute(
+                                builder: (_) => const CabangScreen()),
                           ),
                         ),
                         ServiceCard(
@@ -140,30 +165,30 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.person,
                           label: 'Pegawai',
                           color: const Color(0xFF66BB6A),
-                          onTap: () => _navigateToService(
+                          onTap: () => Navigator.push(
                             context,
-                            'Pegawai',
-                            'Kelola data pegawai Anda',
+                            MaterialPageRoute(
+                                builder: (_) => const PegawaiScreen()),
                           ),
                         ),
                         ServiceCard(
                           icon: Icons.people,
                           label: 'Pelanggan',
                           color: const Color(0xFFFFA726),
-                          onTap: () => _navigateToService(
+                          onTap: () => Navigator.push(
                             context,
-                            'Pelanggan',
-                            'Kelola data pelanggan Anda',
+                            MaterialPageRoute(
+                                builder: (_) => const PelangganScreen()),
                           ),
                         ),
                         ServiceCard(
                           icon: Icons.star,
                           label: 'Promo',
                           color: const Color(0xFF4CAF50),
-                          onTap: () => _navigateToService(
+                          onTap: () => Navigator.push(
                             context,
-                            'Promo',
-                            'Kelola promosi dan diskon',
+                            MaterialPageRoute(
+                                builder: (_) => const PromoScreen()),
                           ),
                         ),
                         ServiceCard(
@@ -181,11 +206,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
 
               // Reports Section
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: hPadding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -197,14 +222,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     GridView.count(
-                      crossAxisCount: 4,
+                      crossAxisCount: cols,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 20,
-                      crossAxisSpacing: 15,
-                      childAspectRatio: 0.75,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: aspectRatio,
                       children: [
                         ReportCard(
                           icon: Icons.receipt,
