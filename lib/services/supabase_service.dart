@@ -439,4 +439,278 @@ class SupabaseService {
   Future<void> deletePromo(String id) async {
     await _supabase.from('promo').delete().eq('id', id);
   }
+
+  // ============== Kategori Layanan Methods ==============
+
+  Future<List<Map<String, dynamic>>> getKategoriLayanan() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return [];
+    return await _supabase
+        .from('kategori_layanan')
+        .select()
+        .eq('user_id', userId)
+        .order('nama', ascending: true);
+  }
+
+  Future<void> addKategoriLayanan({required String nama, String? deskripsi}) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('Tidak terautentikasi');
+    await _supabase.from('kategori_layanan').insert({
+      'user_id': userId,
+      'nama': nama,
+      'deskripsi': deskripsi,
+    });
+  }
+
+  Future<void> updateKategoriLayanan({
+    required String id,
+    required Map<String, dynamic> data,
+  }) async {
+    await _supabase.from('kategori_layanan').update(data).eq('id', id);
+  }
+
+  Future<void> deleteKategoriLayanan(String id) async {
+    await _supabase.from('kategori_layanan').delete().eq('id', id);
+  }
+
+  // ============== Produk Layanan Methods ==============
+
+  Future<List<Map<String, dynamic>>> getProdukLayanan({String? kategoriId}) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return [];
+    var query = _supabase
+        .from('produk_layanan')
+        .select('*, kategori_layanan(nama)')
+        .eq('user_id', userId);
+    if (kategoriId != null) query = query.eq('kategori_id', kategoriId);
+    return await query.order('nama', ascending: true);
+  }
+
+  Future<void> addProdukLayanan({
+    required String nama,
+    required int harga,
+    required String satuan,
+    String? kategoriId,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('Tidak terautentikasi');
+    await _supabase.from('produk_layanan').insert({
+      'user_id': userId,
+      'kategori_id': kategoriId,
+      'nama': nama,
+      'harga': harga,
+      'satuan': satuan,
+    });
+  }
+
+  Future<void> updateProdukLayanan({
+    required String id,
+    required Map<String, dynamic> data,
+  }) async {
+    await _supabase.from('produk_layanan').update(data).eq('id', id);
+  }
+
+  Future<void> deleteProdukLayanan(String id) async {
+    await _supabase.from('produk_layanan').delete().eq('id', id);
+  }
+
+  // ============== Pengeluaran Methods ==============
+
+  Future<List<Map<String, dynamic>>> getPengeluaran() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return [];
+    return await _supabase
+        .from('pengeluaran')
+        .select()
+        .eq('user_id', userId)
+        .order('tanggal', ascending: false);
+  }
+
+  Future<void> addPengeluaran({
+    required String nama,
+    required String kategori,
+    required int jumlah,
+    required DateTime tanggal,
+    String? keterangan,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('Tidak terautentikasi');
+    await _supabase.from('pengeluaran').insert({
+      'user_id': userId,
+      'nama': nama,
+      'kategori': kategori,
+      'jumlah': jumlah,
+      'tanggal': tanggal.toIso8601String().split('T').first,
+      'keterangan': keterangan,
+    });
+  }
+
+  Future<void> updatePengeluaran({
+    required String id,
+    required Map<String, dynamic> data,
+  }) async {
+    await _supabase.from('pengeluaran').update(data).eq('id', id);
+  }
+
+  Future<void> deletePengeluaran(String id) async {
+    await _supabase.from('pengeluaran').delete().eq('id', id);
+  }
+
+  // ============== Transaksi Methods ==============
+
+  Future<List<Map<String, dynamic>>> getTransaksi({int limit = 50}) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return [];
+    return await _supabase
+        .from('transaksi')
+        .select('*, pelanggan(nama)')
+        .eq('user_id', userId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+  }
+
+  Future<Map<String, dynamic>> getTransaksiDetail(String id) async {
+    final trx = await _supabase
+        .from('transaksi')
+        .select('*, pelanggan(nama)')
+        .eq('id', id)
+        .single();
+    final items = await _supabase
+        .from('item_transaksi')
+        .select()
+        .eq('transaksi_id', id)
+        .order('created_at', ascending: true);
+    return {...trx, 'items': items};
+  }
+
+  Future<String> _generateNomorInvoice() async {
+    final userId = _supabase.auth.currentUser?.id;
+    final today = DateTime.now();
+    final dateStr =
+        '${today.year}${today.month.toString().padLeft(2, '0')}${today.day.toString().padLeft(2, '0')}';
+    final startOfDay = DateTime(today.year, today.month, today.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    final rows = await _supabase
+        .from('transaksi')
+        .select('id')
+        .eq('user_id', userId ?? '')
+        .gte('created_at', startOfDay.toIso8601String())
+        .lt('created_at', endOfDay.toIso8601String());
+    final seq = (rows.length + 1).toString().padLeft(4, '0');
+    return 'INV-$dateStr-$seq';
+  }
+
+  Future<String> createTransaksi({
+    String? pelangganId,
+    String? namaPelanggan,
+    required List<Map<String, dynamic>> items,
+    int diskonPersen = 0,
+    String? catatan,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('Tidak terautentikasi');
+    if (items.isEmpty) throw Exception('Tambahkan minimal satu item');
+
+    final nomorInvoice = await _generateNomorInvoice();
+    final totalHarga = items.fold<int>(
+        0, (sum, i) => sum + (i['subtotal'] as int));
+    final diskonJumlah = (totalHarga * diskonPersen / 100).round();
+    final totalBayar = totalHarga - diskonJumlah;
+
+    final trxResult = await _supabase
+        .from('transaksi')
+        .insert({
+          'user_id': userId,
+          'pelanggan_id': pelangganId,
+          'nama_pelanggan': namaPelanggan,
+          'nomor_invoice': nomorInvoice,
+          'total_harga': totalHarga,
+          'diskon_persen': diskonPersen,
+          'diskon_jumlah': diskonJumlah,
+          'total_bayar': totalBayar,
+          'status': 'selesai',
+          'catatan': catatan,
+        })
+        .select('id')
+        .single();
+
+    final transaksiId = trxResult['id'].toString();
+    final itemRows = items
+        .map((i) => {
+              'transaksi_id': transaksiId,
+              'produk_id': i['produk_id'],
+              'nama_produk': i['nama_produk'],
+              'harga': i['harga'],
+              'quantity': i['quantity'],
+              'satuan': i['satuan'],
+              'subtotal': i['subtotal'],
+            })
+        .toList();
+    await _supabase.from('item_transaksi').insert(itemRows);
+
+    // bump total_transaksi on pelanggan
+    if (pelangganId != null) {
+      try {
+        final pel = await _supabase
+            .from('pelanggan')
+            .select('total_transaksi')
+            .eq('id', pelangganId)
+            .single();
+        final current = pel['total_transaksi'] as int? ?? 0;
+        await _supabase
+            .from('pelanggan')
+            .update({'total_transaksi': current + 1})
+            .eq('id', pelangganId);
+      } catch (_) {}
+    }
+
+    return nomorInvoice;
+  }
+
+  Future<void> deleteTransaksi(String id) async {
+    await _supabase.from('item_transaksi').delete().eq('transaksi_id', id);
+    await _supabase.from('transaksi').delete().eq('id', id);
+  }
+
+  // ============== Dashboard Stats ==============
+
+  Future<Map<String, dynamic>> getDashboardStats() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) {
+      return {
+        'today_revenue': 0,
+        'today_count': 0,
+        'month_revenue': 0,
+        'month_count': 0,
+      };
+    }
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final startOfMonth = DateTime(now.year, now.month, 1);
+
+    final todayRows = await _supabase
+        .from('transaksi')
+        .select('total_bayar')
+        .eq('user_id', userId)
+        .eq('status', 'selesai')
+        .gte('created_at', startOfDay.toIso8601String());
+    final monthRows = await _supabase
+        .from('transaksi')
+        .select('total_bayar')
+        .eq('user_id', userId)
+        .eq('status', 'selesai')
+        .gte('created_at', startOfMonth.toIso8601String());
+
+    final todayRevenue = todayRows.fold<int>(
+        0, (s, r) => s + ((r['total_bayar'] as num?)?.toInt() ?? 0));
+    final monthRevenue = monthRows.fold<int>(
+        0, (s, r) => s + ((r['total_bayar'] as num?)?.toInt() ?? 0));
+
+    return {
+      'today_revenue': todayRevenue,
+      'today_count': todayRows.length,
+      'month_revenue': monthRevenue,
+      'month_count': monthRows.length,
+    };
+  }
 }
